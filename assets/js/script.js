@@ -11,11 +11,31 @@ var createTask = function(taskText, taskDate, taskList) {
 
   // append span and p element to parent li
   taskLi.append(taskSpan, taskP);
-
+  // audit task
+  auditTasks(taskLi)
 
   // append to ul list on the page
   $("#list-" + taskList).append(taskLi);
 };
+var auditTasks =function (taskEl) {
+  // to ensure elemtn is getting into the function
+  var date =$(taskEl).find("span").text().trim()
+
+  console.log(date)
+
+  var time =moment(date, "l").set("hour", 17)
+  console.log(time)
+
+  //remove any old classes from element
+    $(taskEl).removeClass("list-group-item-warning list-group-item-danger")
+  //check if date is in the past 
+  if (moment().isAfter(time)) {
+    $(taskEl).addClass("list-group-item-danger")
+  }
+  else if (Math.abs(moment().diff(time, "days"))<=2) {
+    $(taskEl).addClass("list-group-item-warning")
+  }
+}
 
 var loadTasks = function() {
   tasks = JSON.parse(localStorage.getItem("tasks"));
@@ -56,6 +76,11 @@ $("#task-form-modal").on("show.bs.modal", function() {
 $("#task-form-modal").on("shown.bs.modal", function() {
   // highlight textarea
   $("#modalTaskDescription").trigger("focus");
+});
+
+//modal date 
+$("#modalDueDate").datepicker({
+  minDate: 1
 });
 
 // save button in modal was clicked
@@ -135,12 +160,22 @@ $(".list-group").on("click", "span", function(){
   //swap out elements
   $(this).replaceWith(dateInput)
 
+  //enable jquery UI date picker
+
+  dateInput.datepicker({
+    minDate: 1,
+    onClose: function(){
+      //when date picker is closed, trigger change event
+      $(this).trigger("change")
+    }
+  })
+
   //automatically focus on new element
   dateInput.trigger("focus")
 })
 
 // value of due date was changed 
-$(".list-group").on("blur", "input[type='text']", function(){
+$(".list-group").on("change", "input[type='text']", function(){
     // get current text
     var date = $(this)
     .val()
@@ -165,6 +200,9 @@ $(".list-group").on("blur", "input[type='text']", function(){
   .text(date)
   // replace input woith span element
   $(this).replaceWith(taskSpan)
+
+  //past li into audittask to check due date 
+  auditTasks($(taskSpan).closest("list-group-item"))
 })
 
 //sortable ul 
